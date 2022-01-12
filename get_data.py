@@ -1,13 +1,13 @@
 import os
-import requests
+# import requests
 import numpy as np
-import pyarrow.parquet as pq
-from pyarrow import csv, parquet
+# import pyarrow.parquet as pq
+# from pyarrow import csv, parquet
 from pyarrow.csv import read_csv, ParseOptions, ConvertOptions, ReadOptions
 import datetime
 import pandas as pd
 from sodapy import Socrata
-import config
+# import config
 APP_TOKEN = os.environ.get("SOCRATA_APP_TOKEN")
 
 
