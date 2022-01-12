@@ -156,9 +156,9 @@ def map_collisions(latest_collision_date):
         icon_size=(20, 20),
         popup_anchor=(0, -30),
         )
-        html = '<i>Cause of Collision: </i>' + '<b>' + row.loc['contributing_factor_vehicle_1'] + '</b>' + '<br>' + '</b>' '<i>Number of Persons Injured: </i>' + '<b>' + str(row.loc['number_of_persons_injured']) + '</b>' + '<br>' + '</b>' '<i>Number of Persons Killed: </i>' + '<b>' + str(row.loc['number_of_persons_killed']) + '</b>'
+        html = '<i style="font-family:arial"> Cause of Collision: </i>' + '<b style="font-family:arial">' + row.loc['contributing_factor_vehicle_1'] + '</b>' + '<br style="font-family:arial">' + '</b>' '<i style="font-family:arial">Number of Persons Injured: </i>' + '<b style="font-family:arial">' + str(row.loc['number_of_persons_injured']) + '</b>' + '<br style="font-family:arial">' + '</b>' '<i style="font-family:arial">Number of Persons Killed: </i>' + '<b style="font-family:arial">' + str(row.loc['number_of_persons_killed']) + '</b>'
         iframe = folium.IFrame(html=html, width=330, height=100)
-        popup = folium.Popup(iframe, max_width=330, min_height=100)
+        popup = folium.Popup(iframe, max_width='100%', min_height='100%')
         
         folium.Marker(location=[row.loc['latitude'], row.loc['longitude']], icon=icon, popup=popup, tooltip=tooltip).add_to(collision_map)
         
@@ -174,9 +174,19 @@ def map_collisions(latest_collision_date):
 # FRONT END #
 #############
 
-st.title('How Safe are NYC Streets?')
-st.image('./Assets/OPS-0333-Crossride-Illustration_FINAL.jpeg', caption=None, width='auto', use_column_width=True)
-st.caption(f'Data between {first_date.strftime("%m/%d/%Y")} and {last_updated.strftime("%m/%d/%Y")}')
+# Front end elements
+html_title = """ 
+    <div style ="background-color:white; padding:5px"> 
+    <h1 style ="color:black; text-align:center">How Safe are NYC Streets?</h1>
+    <img src="https://www.mississaugabikes.ca/wp-content/uploads/2018/11/OPS-0333-Crossride-Illustration_FINAL.jpg" alt="City" style="width:100%;height:auto;"> 
+    </div>
+    """
+st.markdown(html_title, unsafe_allow_html=True)
+st.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signals/')
+
+# st.title('How Safe are NYC Streets?')
+# st.image('./Assets/OPS-0333-Crossride-Illustration_FINAL.jpeg', caption=None, width='auto', use_column_width=True)
+
 
 ### TOP ROW
 st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) through {last_updated.strftime("%Y-%m-%d")}')
@@ -188,13 +198,33 @@ col1, col2, col3, col4, col5 = st.columns(5)
 # col4.metric("Cyclists Injured (YTD)", cyclists_injured_YTD, f'{cyclists_injured_perc_change}%')
 # col5.metric("Cyclists Killed (YTD)", cyclists_killed_YTD, f'{cyclists_killed_perc_change}%')
 
-col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{round(collisions_perc_change[0], 0)}% (2021 YTD)')
-col2.metric("Pedestrians Injured (YTD)", peds_injured_YTD, f'{round(peds_injured_perc_change[0], 0)}% (2021 YTD)')
-col3.metric("Pedestrians Killed (YTD)", peds_killed_YTD, f'{round(peds_killed_perc_change[0], 0)}% (2021 YTD)')
-col4.metric("Cyclists Injured (YTD)", cyclists_injured_YTD, f'{round(cyclists_injured_perc_change[0], 0)}% (2021 YTD)')
-col5.metric("Cyclists Killed (YTD)", cyclists_killed_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
+# with col1:
+#     st.markdown('**Vehicle Collisions (YTD)**', unsafe_allow_html=True)
+#     number1 = st.metric('', collisions_YTD, f'{round(collisions_perc_change[0], 0)}% (2021 YTD)')
 
-st.subheader('')
+# with col2:
+#     st.markdown('**Pedestrians Injured (YTD)**')
+#     number2 = st.metric('', peds_injured_YTD, f'{round(peds_injured_perc_change[0], 0)}% (2021 YTD)')
+
+# with col3:
+#     st.markdown('**Pedestrians Killed (YTD)**')
+#     number3 = st.metric('', peds_killed_YTD, f'{round(peds_killed_perc_change[0], 0)}% (2021 YTD)')
+
+# with col4:
+#     st.markdown('**Cyclists Injured (YTD)**')
+#     number4 = st.metric('', cyclists_injured_YTD, f'{round(cyclists_injured_perc_change[0], 0)}% (2021 YTD)')
+
+# with col5:
+#     st.markdown('**Cyclists Killed (YTD)**')
+#     st.metric("", cyclists_injured_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
+
+col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{round(collisions_perc_change[0], 0)}% (2021 YTD)')
+col2.metric('Pedestrians Injured (YTD)', peds_injured_YTD, f'{round(peds_injured_perc_change[0], 0)}% (2021 YTD)')
+col3.metric('Pedestrians Killed (YTD)', peds_killed_YTD, f'{round(peds_killed_perc_change[0], 0)}% (2021 YTD)')
+col4.metric('Cyclists Injured (YTD)', cyclists_injured_YTD, f'{round(cyclists_injured_perc_change[0], 0)}% (2021 YTD)')
+col5.metric('Cyclists Killed (YTD)', cyclists_killed_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
+
+st.markdown('<hr/>', unsafe_allow_html=True)
 
 #########################
 # SLIDER TO SELECT DATE #
@@ -220,12 +250,14 @@ with st.container():
     # st.subheader(f'Daily Vehicle Collisions')
     # latest_collision_date = st.select_slider('',options=all_dates, value=all_dates[-1])
     # st.info(f'**Use slider to visualize collisions dating back to {all_dates[0]}')
-    st.markdown(f'##### {total_collisions} Collisions on {latest_collision_date}**')
+    st.markdown(f'<h5>There were <em style="font-size:30px" "color:red">{total_collisions}</em> collisions on {latest_collision_date}</h5>', unsafe_allow_html=True)
     map_collisions(latest_collision_date)
     
 
 
 st.sidebar.subheader("About")
-st.sidebar.write()
+
+st.sidebar.caption(f'Data between {first_date.strftime("%m/%d/%Y")} and {last_updated.strftime("%m/%d/%Y")}')
 st.sidebar.text('Dashboard created by Roger Lefort')
+
 
