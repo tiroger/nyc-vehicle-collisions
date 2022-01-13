@@ -141,7 +141,7 @@ cyclists_killed_perc_change = (cyclists_killed_YTD.values - cyclists_killed_YTD_
 ############################
 
 # Retrieving the data directly from Amazon S3
-all_collisions_df = wr.s3.read_parquet(data_URI)
+all_collisions_df = pq.read_pandas('./Data/collisions.parquet').to_pandas()
 # Modifying column names
 all_collisions_df.columns = all_collisions_df.columns.str.lower()
 all_collisions_df.columns = all_collisions_df.columns.str.replace(' ', '_')
