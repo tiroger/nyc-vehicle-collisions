@@ -2,6 +2,8 @@
 # LIBRARIES #
 #############
 
+from os import rename
+from streamlit.state.session_state import Value
 from get_data import fetch_data # Module to fetch and process data
 import pandas as pd
 import numpy as np
@@ -12,6 +14,14 @@ from folium.plugins import HeatMap
 from streamlit_folium import folium_static
 import plotly
 import datetime
+import plotly.express as px
+import plotly.graph_objects as go
+
+import pyarrow.parquet as pq
+import awswrangler as wr
+import calendar
+
+data_URI = 's3://nypdcollisions/collisions.parquet'
 
 from PIL import Image
 
@@ -39,25 +49,30 @@ st.set_page_config(
 # FETCHING DATA #
 # ###############
 
-@st.cache(show_spinner=False)
+@st.cache(show_spinner=False, max_entries=5, ttl=86400)
 def fetch_and_clean_data():
     with st.spinner('Data Refreshing... May take up to 5 minutes.'):
         collisions_df = fetch_data()
         return collisions_df
 
-data = fetch_and_clean_data()
+collisions = fetch_and_clean_data()
+
+
+collisions.rename(columns={
+    'number_of_cyclist_injured': 'number_of_cyclists_injured',
+    'number_of_cyclist_killed': 'number_of_cyclists_killed',
+    'number_of_motorist_injured': 'number_of_motorists_injured',
+    'number_of_motorist_killed': 'number_of_motorists_killed'
+}, inplace=True)
 
 
 #################################
 # TRANSFORMING DATA FOR METRICS #
-##################################
+#################################
 
-data_start_date = '2018-12-31' # Limiting data to from 2020 to present day
+data_start_date = '2019-01-01' # Limiting data to from 2019 to present day
 
-
-collisions = data.copy()
-
-collisions = collisions[collisions['crash_date'] > data_start_date]
+collisions = collisions[collisions['crash_date'] >= data_start_date]
 
 last_updated = collisions['crash_date'].max()
 first_date = collisions['crash_date'].min()
@@ -68,10 +83,10 @@ grouped_by_day = collisions.groupby(['crash_year', 'crash_date']).agg({
     'number_of_persons_killed': 'sum',
     'number_of_pedestrians_injured': 'sum',
     'number_of_pedestrians_killed': 'sum',
-    'number_of_cyclist_injured': 'sum',
-    'number_of_cyclist_killed': 'sum',
-    'number_of_motorist_injured': 'sum',
-    'number_of_motorist_killed': 'sum'
+    'number_of_cyclists_injured': 'sum',
+    'number_of_cyclists_killed': 'sum',
+    'number_of_motorists_injured': 'sum',
+    'number_of_motorists_killed': 'sum'
 })
 grouped_by_day.reset_index(inplace=True)
 
@@ -84,8 +99,8 @@ grouped_by_day['person_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])[
 grouped_by_day['peds_injured_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_pedestrians_injured'].cumsum()
 grouped_by_day['peds_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_pedestrians_killed'].cumsum()
 
-grouped_by_day['cyclist_injured_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_cyclist_injured'].cumsum()
-grouped_by_day['cyclist_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_cyclist_killed'].cumsum()
+grouped_by_day['cyclist_injured_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_cyclists_injured'].cumsum()
+grouped_by_day['cyclist_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_cyclists_killed'].cumsum()
 grouped_by_day.reset_index(inplace=True)
 
 # Year to Date metrics
@@ -126,9 +141,35 @@ peds_killed_perc_change = (peds_killed_YTD.values - peds_killed_YTD_previous.val
 cyclists_injured_perc_change = (cyclists_injured_YTD.values - cyclists_injured_YTD_previous.values)/cyclists_injured_YTD_previous.values*100
 cyclists_killed_perc_change = (cyclists_killed_YTD.values - cyclists_killed_YTD_previous.values)/cyclists_killed_YTD_previous.values*100
 
-####################
-# DATA FOR MAPPING #
-####################
+############################
+# FETCHING HISTORICAL DATA #
+############################
+
+# # Retrieving the data directly from Amazon S3
+# all_collisions_df = pq.read_pandas('./Data/collisions.parquet').to_pandas()
+# # Modifying column names
+# all_collisions_df.columns = all_collisions_df.columns.str.lower()
+# all_collisions_df.columns = all_collisions_df.columns.str.replace(' ', '_')
+
+# all_collisions_df['crash_date'] = pd.to_datetime(all_collisions_df['crash_date'])
+# all_collisions_df['crash_year'] = pd.DatetimeIndex(all_collisions_df['crash_date']).year
+# all_collisions_df['crash_month'] = pd.DatetimeIndex(all_collisions_df['crash_date']).month
+# # all_collisions_df['crash_month'] = all_collisions_df['crash_date'].dt.month_name()
+# all_collisions_df['crash_month_year'] = pd.to_datetime(all_collisions_df['crash_date']).dt.to_period('M')
+# historical_df = all_collisions_df[all_collisions_df.crash_date < '2022-01-01'] # Removing 2022 data
+# historical_df = all_collisions_df[all_collisions_df.crash_year > 2012]
+
+by_year_and_boro = collisions.groupby(['crash_year', 'crash_month']).agg({
+    'collision_id': 'count',
+    'number_of_persons_injured': 'sum',
+    'number_of_persons_killed': 'sum',
+    'number_of_pedestrians_injured': 'sum',
+    'number_of_pedestrians_killed': 'sum',
+    'number_of_cyclists_injured': 'sum',
+    'number_of_cyclists_killed': 'sum',
+    'number_of_motorists_injured': 'sum',
+    'number_of_motorists_killed': 'sum'
+}).rename(columns={'collision_id': 'total_collisions'}).reset_index()
 
 ##########################
 # COLLISIONS IN PAST DAY #
@@ -139,7 +180,7 @@ cyclists_killed_perc_change = (cyclists_killed_YTD.values - cyclists_killed_YTD_
 
 
 def map_collisions(latest_collision_date):
-    latest_collision_date_df = data[data['crash_date'] == latest_collision_date].dropna()
+    latest_collision_date_df = collisions[collisions['crash_date'] == latest_collision_date].dropna()
     locations = zip(latest_collision_date_df.latitude, latest_collision_date_df.longitude)
     # Initializing a new map centered around NYC
     collision_map = folium.Map(location=[40.7128, -74.0060], zoom_start=10, dragging=True, scrollWheelZoom=True, tiles='cartodbpositron')
@@ -165,7 +206,7 @@ def map_collisions(latest_collision_date):
     HeatMap(locations).add_to(collision_map)
     locations = zip(latest_collision_date_df.latitude, latest_collision_date_df.longitude)
 
-    folium_static(collision_map, width=1000)
+    folium_static(collision_map, width=1020)
 
 
 
@@ -244,7 +285,7 @@ with col6:
     st.markdown(f'*Use slider to visualize collisions dating back to {all_dates[0]}*')
 with col7:
     latest_collision_date = st.select_slider('',options=all_dates, value=all_dates[-1])
-    total_collisions = data[data['crash_date'] == latest_collision_date]['collision_id'].count()
+    total_collisions = collisions[collisions['crash_date'] == latest_collision_date]['collision_id'].count()
 
 with st.container():
     # st.subheader(f'Daily Vehicle Collisions')
@@ -253,11 +294,131 @@ with st.container():
     st.markdown(f'<h5>There were <em style="font-size:30px" "color:red">{total_collisions}</em> collisions on {latest_collision_date}</h5>', unsafe_allow_html=True)
     map_collisions(latest_collision_date)
     
+st.markdown('<hr/>', unsafe_allow_html=True)
 
+###################
+# HISTORICAL DATA #
+###################
+
+st.markdown(f'### Historical Data from 2019 to 2022*')
+col8, col9 = st.columns(2)
+
+metrics = ['total_collisions', 'number_of_persons_injured', 'number_of_persons_killed', 'number_of_pedestrians_injured', 'number_of_pedestrians_killed', 'number_of_cyclists_injured', 'number_of_cyclists_killed', 'number_of_motorists_injured', 'number_of_motorists_killed']
+month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+
+def change_case(string):
+    no_under = string.replace('_', ' ')
+    final = no_under.title()
+    return final
+
+with col8:
+
+    annotation = {
+    'xref': 'paper',  # we'll reference the paper which we draw plot
+    'yref': 'paper',  # we'll reference the paper which we draw plot
+    'x': 0.24,  # If we consider the x-axis as 100%, we will place it on the x-axis with how many %
+    'y': 0.53,
+    'ax':50,  # If we consider the y-axis as 100%, we will place it on the y-axis with how many %
+    'text': 'Start of COVID-19 lockdown',
+    'showarrow': True,
+    'arrowhead': 3,
+    'font': {'size': 10, 'color': 'black'},
+    'hovertext': 'On March 7, Cuomo declared a state of emergency in New York State after 162 cases had been confirmed in the state.'
+    }
+    metric = st.selectbox('', options=metrics, format_func=lambda x: change_case(x), help='Select desired metric')
+    proper_metric = metric.replace('_', ' ')
+    proper_metric = proper_metric.title()
+
+    fig = px.line(by_year_and_boro, x="crash_month", y=metric, color='crash_year', markers=True, title=f'Monthly {proper_metric} between 2019 and 2022 <br><sup>*2022 data still maturing.</sup>' , labels={
+                        'crash_year': 'Year',
+                        "crash_month": 'Month',
+                        metric: proper_metric,
+                    })
+
+    # fig.for_each_trace(lambda trace: fig.add_annotation(
+    #     x=trace.x[-1], y=trace.y[-1], text='  '+trace.name, 
+    #     font_color=trace.line.color,
+    #     ax=10, ay=10, xanchor="left", showarrow=False))
+    fig.update_traces(mode="markers+lines", hovertemplate=None)
+    fig.update_xaxes(ticktext=month_names, tickvals=[1,2,3,4,5,6,7,8,9,10,11,12])
+    fig.update_layout({'annotations': [annotation]})    
+    fig.update_layout(
+            xaxis=dict(
+                showline=True,
+                showgrid=False,
+                showticklabels=True,
+                linecolor='rgb(204, 204, 204)',
+                linewidth=2,
+                ticks='outside',
+                title='',
+                tickfont=dict(
+                    family='Arial',
+                    size=12,
+                    color='rgb(82, 82, 82)',
+                ),
+            ),
+            yaxis=dict(
+                # showgrid=True,
+                zeroline=False,
+                showline=True,
+                gridcolor = 'rgb(235, 236, 240)',
+                showticklabels=True,
+                title='',
+                autorange=True
+            ),
+            autosize=True,
+            hovermode="x unified",
+            margin=dict(
+                autoexpand=True,
+                l=100,
+                r=20,
+                t=110,
+            ),
+            showlegend=True,
+    #         legend=dict(
+    #         # orientation="h",
+    #         yanchor="bottom",
+    #         y=0.9,
+    #         xanchor="left",
+    #         x=0.7
+    # ),
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+    # fig.show()
+
+    st.plotly_chart(fig, use_container_width = True)
+
+with col9:
+    n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
+    crash_causes = collisions['contributing_factor_vehicle_1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
+    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(n_reasons)
+
+    labels = top_10_crashes_causes.unique_values
+    values = top_10_crashes_causes.counts
+
+# pull is given as a fraction of the pie radius
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+    fig.update_layout(
+    title_text=f'Top {n_reasons} Vehicle Collision Causes <br><sup>~30% of causes listed as "Unspecified" .</sup>')
+
+#     fig = px.bar(top_10_crashes_causes, x="unique_values", y="counts")
+    st.plotly_chart(fig, use_container_width = True)
+
+
+
+
+############
+# SIDE BAR #
+############
 
 st.sidebar.subheader("About")
+st.sidebar.markdown('*In 2011 the New York City Council passed Local Law #12 requiring the NYPD to collect and make available to the public records of all accidents involving motor vehicles. A police report (MV104-AN) is required to be filled out for collisions where someone is injured or killed, or where there is at least $1000 worth of damage. Each report represents a unique collision and includes date and time, location(city, borough, address, zip code, latitude and longitude), number of injuries and/or deaths, contributing factors, and information about the vehicles involved. The information is available in a variety of formats, including downloadable json and csv files, and through the Socrata Open Data API.*')
+st.sidebar.caption('*For perfomance, we are only including data going back to 2019.*')
 
-st.sidebar.caption(f'Data between {first_date.strftime("%m/%d/%Y")} and {last_updated.strftime("%m/%d/%Y")}')
+
+st.sidebar.caption(f'Data current as of {last_updated.strftime("%m/%d/%Y")}')
+st.sidebar.markdown('<hr/>', unsafe_allow_html=True)
 st.sidebar.text('Dashboard created by Roger Lefort')
 
 
