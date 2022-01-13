@@ -93,8 +93,6 @@ def fetch_data():
                             '': np.nan, 
                             'Unspecified' : np.nan, 
                             'unspecified' : np.nan, 
-                            '80': np.nan, 
-                            '1': np.nan, 
                             'Illnes': 'Illness',
                             'Drugs (illegal)': 'Drugs (Illegal)'
                             }, inplace=True)
@@ -104,6 +102,7 @@ def fetch_data():
     # Creating new columns for analysis
     results_df['crash_date'] = pd.to_datetime(results_df['crash_date'])
     results_df['crash_year'] = pd.DatetimeIndex(results_df['crash_date']).year
+    results_df['crash_month'] = pd.DatetimeIndex(results_df['crash_date']).month
     results_df['crash_month_year'] = pd.to_datetime(results_df['crash_date']).dt.to_period('M')
     results_df['crash_time'] = pd.to_datetime(results_df['crash_time'])
     results_df['crash_hour'] = pd.DatetimeIndex(results_df['crash_time']).hour
