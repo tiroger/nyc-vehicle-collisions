@@ -2,7 +2,8 @@
 # LIBRARIES #
 #############
 
-from os import rename
+# from operator import index
+# from os import rename
 from streamlit.state.session_state import Value
 from get_data import fetch_data # Module to fetch and process data
 import pandas as pd
@@ -12,16 +13,16 @@ import folium
 from folium.features import CustomIcon
 from folium.plugins import HeatMap
 from streamlit_folium import folium_static
-import plotly
-import datetime
+# import plotly
+# import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 
 import pyarrow.parquet as pq
 import awswrangler as wr
-import calendar
+# import calendar
 
-data_URI = 's3://nypdcollisions/collisions.parquet'
+# data_URI = 's3://nypdcollisions/collisions.parquet'
 
 from PIL import Image
 
@@ -44,6 +45,15 @@ st.set_page_config(
      }
 )
 
+# Front end elements
+html_title = """ 
+    <div style ="background-color:white; padding:5px"> 
+    <h1 style ="color:black; text-align:center">How Safe are NYC Streets?</h1>
+    <img src="https://www.mississaugabikes.ca/wp-content/uploads/2018/11/OPS-0333-Crossride-Illustration_FINAL.jpg" alt="City" style="width:100%;height:auto;"> 
+    </div>
+    """
+st.sidebar.markdown(html_title, unsafe_allow_html=True)
+st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signals/')
 
 #################
 # FETCHING DATA #
@@ -56,7 +66,6 @@ def fetch_and_clean_data():
         return collisions_df
 
 collisions = fetch_and_clean_data()
-
 
 collisions.rename(columns={
     'number_of_cyclist_injured': 'number_of_cyclists_injured',
@@ -77,7 +86,46 @@ collisions = collisions[collisions['crash_date'] >= data_start_date]
 last_updated = collisions['crash_date'].max()
 first_date = collisions['crash_date'].min()
 
-grouped_by_day = collisions.groupby(['crash_year', 'crash_date']).agg({
+all_boros = collisions.borough.unique()
+
+chk1, chk2, chk3 = st.sidebar.columns(3)
+chk4, chk5, chk6 = st.sidebar.columns(3)
+###
+boro_selection = []
+with chk1:
+    man = st.checkbox('Manhattan', value=True, key='man')
+    if man:
+        boro_selection.append('MANHATTAN')
+
+with chk2:
+    bk = st.checkbox('Brooklyn', value=True, key='bk')
+    if bk:
+        boro_selection.append('BROOKLYN')
+
+with chk3:
+    si = st.checkbox('Bronx', value=True, key='si')
+    if si:
+        boro_selection.append('BRONX')
+
+with chk4:
+    qns = st.checkbox('Queens', value=True, key='qns')
+    if qns:
+        boro_selection.append('QUEENS')
+
+with chk5:
+    bx = st.checkbox('Staten Island', value=True, key='bx')
+    if bx:
+        boro_selection.append('STATEN ISLAND')
+
+with chk6:
+    unk = st.checkbox('Unspecified', value=True, key='unk')
+    if unk:
+        boro_selection.append(np.nan)
+###
+# 'st.checkbox(label, value=False, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False)'
+# 'array([nan, 'QUEENS', 'BROOKLYN', 'STATEN ISLAND', 'MANHATTAN', 'BRONX'],'
+
+grouped_by_day = collisions.loc[collisions.borough.isin(boro_selection)].groupby(['crash_year', 'crash_date']).agg({
     'collision_id': 'count',
     'number_of_persons_injured': 'sum',
     'number_of_persons_killed': 'sum',
@@ -87,8 +135,7 @@ grouped_by_day = collisions.groupby(['crash_year', 'crash_date']).agg({
     'number_of_cyclists_killed': 'sum',
     'number_of_motorists_injured': 'sum',
     'number_of_motorists_killed': 'sum'
-})
-grouped_by_day.reset_index(inplace=True)
+}).reset_index()
 
 # Grouping by Year to obtain the cummulative sum
 grouped_by_day['collisions_cumsum'] = grouped_by_day.groupby(['crash_year'])['collision_id'].cumsum()
@@ -159,6 +206,7 @@ cyclists_killed_perc_change = (cyclists_killed_YTD.values - cyclists_killed_YTD_
 # historical_df = all_collisions_df[all_collisions_df.crash_date < '2022-01-01'] # Removing 2022 data
 # historical_df = all_collisions_df[all_collisions_df.crash_year > 2012]
 
+collisions = collisions[collisions.borough.isin(boro_selection)]
 by_year_and_boro = collisions.groupby(['crash_year', 'crash_month']).agg({
     'collision_id': 'count',
     'number_of_persons_injured': 'sum',
@@ -176,9 +224,6 @@ by_year_and_boro = collisions.groupby(['crash_year', 'crash_month']).agg({
 ##########################
 
 # latest_collision_date = data.crash_date.max()
-
-
-
 def map_collisions(latest_collision_date):
     latest_collision_date_df = collisions[collisions['crash_date'] == latest_collision_date].dropna()
     locations = zip(latest_collision_date_df.latitude, latest_collision_date_df.longitude)
@@ -209,28 +254,30 @@ def map_collisions(latest_collision_date):
     folium_static(collision_map, width=1020)
 
 
-
-
 #############
 # FRONT END #
 #############
 
-# Front end elements
-html_title = """ 
-    <div style ="background-color:white; padding:5px"> 
-    <h1 style ="color:black; text-align:center">How Safe are NYC Streets?</h1>
-    <img src="https://www.mississaugabikes.ca/wp-content/uploads/2018/11/OPS-0333-Crossride-Illustration_FINAL.jpg" alt="City" style="width:100%;height:auto;"> 
-    </div>
-    """
-st.markdown(html_title, unsafe_allow_html=True)
-st.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signals/')
+# # Front end elements
+# html_title = """ 
+#     <div style ="background-color:white; padding:5px"> 
+#     <h1 style ="color:black; text-align:center">How Safe are NYC Streets?</h1>
+#     <img src="https://www.mississaugabikes.ca/wp-content/uploads/2018/11/OPS-0333-Crossride-Illustration_FINAL.jpg" alt="City" style="width:100%;height:auto;"> 
+#     </div>
+#     """
+# st.sidebar.markdown(html_title, unsafe_allow_html=True)
+# st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signals/')
 
 # st.title('How Safe are NYC Streets?')
 # st.image('./Assets/OPS-0333-Crossride-Illustration_FINAL.jpeg', caption=None, width='auto', use_column_width=True)
 
+if len(boro_selection) > 5:
+    add_text = 'all Boroughs'
+else:
+    add_text = 'your Selections'
 
 ### TOP ROW
-st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) through {last_updated.strftime("%Y-%m-%d")}')
+st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) through {last_updated.strftime("%Y-%m-%d")} for {add_text}') 
 col1, col2, col3, col4, col5 = st.columns(5)
 
 # col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{collisions_perc_change}%')
@@ -281,10 +328,11 @@ for d in grouped_by_day.crash_date:
 col6, col7 = st.columns(2)
 
 with col6:
-    st.markdown('### Daily Vehicle Collisions')
+    st.markdown(f'### Daily Vehicle Collisions for {add_text}')
     st.markdown(f'*Use slider to visualize collisions dating back to {all_dates[0]}*')
 with col7:
     latest_collision_date = st.select_slider('',options=all_dates, value=all_dates[-1])
+    collisions = collisions[collisions.borough.isin(boro_selection)]
     total_collisions = collisions[collisions['crash_date'] == latest_collision_date]['collision_id'].count()
 
 with st.container():
@@ -315,11 +363,11 @@ def change_case(string):
 with col8:
 
     annotation = {
-    'xref': 'paper',  # we'll reference the paper which we draw plot
-    'yref': 'paper',  # we'll reference the paper which we draw plot
+    'xref': 'paper',
+    'yref': 'paper',
     'x': 0.24,  # If we consider the x-axis as 100%, we will place it on the x-axis with how many %
     'y': 0.53,
-    'ax':50,  # If we consider the y-axis as 100%, we will place it on the y-axis with how many %
+    'ax':50,
     'text': 'Start of COVID-19 lockdown',
     'showarrow': True,
     'arrowhead': 3,
