@@ -27,7 +27,7 @@ import awswrangler as wr
 from PIL import Image
 
 import streamlit as st
-from streamlit_autorefresh import st_autorefresh
+# from streamlit_autorefresh import st_autorefresh
 
 
 #############
@@ -60,7 +60,7 @@ st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signa
 # FETCHING DATA #
 # ###############
 
-st_autorefresh(interval=6 * 60 * 60 * 1000, key="dataframerefresh") # auto-refresh data every 6 hours
+# st_autorefresh(interval=6 * 60 * 60 * 1000, key="dataframerefresh") # auto-refresh data every 6 hours
 
 @st.cache(show_spinner=False, max_entries=5, ttl=86400)
 def fetch_and_clean_data():
