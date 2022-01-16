@@ -27,6 +27,7 @@ import awswrangler as wr
 from PIL import Image
 
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 
 #############
@@ -47,9 +48,9 @@ st.set_page_config(
 
 # Front end elements
 html_title = """ 
-    <div style ="background-color:white; padding:5px"> 
+    <div padding:5px"> 
     <h1 style ="color:black; text-align:center">How Safe are NYC Streets?</h1>
-    <img src="https://www.mississaugabikes.ca/wp-content/uploads/2018/11/OPS-0333-Crossride-Illustration_FINAL.jpg" alt="City" style="width:100%;height:auto;"> 
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/I_Love_New_York.svg/1101px-I_Love_New_York.svg.png" alt="City" style="width:100%;height:auto;"> 
     </div>
     """
 st.sidebar.markdown(html_title, unsafe_allow_html=True)
@@ -58,6 +59,8 @@ st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signa
 #################
 # FETCHING DATA #
 # ###############
+
+st_autorefresh(interval=6 * 60 * 60 * 1000, key="dataframerefresh") # auto-refresh data every 6 hours
 
 @st.cache(show_spinner=False, max_entries=5, ttl=86400)
 def fetch_and_clean_data():
@@ -277,7 +280,7 @@ else:
     add_text = 'your Selections'
 
 ### TOP ROW
-st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) through {last_updated.strftime("%Y-%m-%d")} for {add_text}') 
+st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) for {add_text} through {last_updated.strftime("%Y-%m-%d")}') 
 col1, col2, col3, col4, col5 = st.columns(5)
 
 # col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{collisions_perc_change}%')
@@ -452,8 +455,6 @@ with col9:
 
 #     fig = px.bar(top_10_crashes_causes, x="unique_values", y="counts")
     st.plotly_chart(fig, use_container_width = True)
-
-
 
 
 ############
