@@ -4,7 +4,7 @@
 
 # from operator import index
 # from os import rename
-from streamlit.state.session_state import Value
+# from streamlit.state.session_state import Value
 from get_data import fetch_data # Module to fetch and process data
 import pandas as pd
 import numpy as np
@@ -18,8 +18,8 @@ from streamlit_folium import folium_static
 import plotly.express as px
 import plotly.graph_objects as go
 
-import pyarrow.parquet as pq
-import awswrangler as wr
+# import pyarrow.parquet as pq
+# import awswrangler as wr
 # import calendar
 
 # data_URI = 's3://nypdcollisions/collisions.parquet'
@@ -27,7 +27,6 @@ import awswrangler as wr
 from PIL import Image
 
 import streamlit as st
-# from streamlit_autorefresh import st_autorefresh
 
 
 #############
@@ -59,8 +58,6 @@ st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signa
 #################
 # FETCHING DATA #
 # ###############
-
-# st_autorefresh(interval=6 * 60 * 60 * 1000, key="dataframerefresh") # auto-refresh data every 6 hours
 
 @st.cache(show_spinner=False, max_entries=5, ttl=86400)
 def fetch_and_clean_data():
