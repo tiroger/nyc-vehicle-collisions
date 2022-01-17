@@ -28,9 +28,7 @@ from PIL import Image
 
 import streamlit as st
 
-import sys
-# import os
-# APP_TOKEN = os.environ("SOCRATA_APP_TOKEN")
+# import sys
 
 
 #############
@@ -131,9 +129,9 @@ with chk6:
 # 'st.checkbox(label, value=False, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False)'
 # 'array([nan, 'QUEENS', 'BROOKLYN', 'STATEN ISLAND', 'MANHATTAN', 'BRONX'],'
 
-if len(boro_selection) == 0:
-    sys.tracebacklimit = 0
-    sys.exit('Please select at least 1 borough to proceed')
+# if len(boro_selection) == 0:
+#     sys.tracebacklimit = 0
+#     sys.exit('Please select at least 1 borough to proceed')
 
 # while len(boro_selection) == 0:
 #     sys.exit('Please select a borough!')
