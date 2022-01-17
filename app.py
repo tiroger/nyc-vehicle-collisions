@@ -5,6 +5,7 @@
 # from operator import index
 # from os import rename
 # from streamlit.state.session_state import Value
+import secrets
 from get_data import fetch_data # Module to fetch and process data
 import pandas as pd
 import numpy as np
@@ -27,6 +28,7 @@ import plotly.graph_objects as go
 from PIL import Image
 
 import streamlit as st
+# APP_TOKEN = st.secrets['SOCRATA_APP_TOKEN']
 
 # import sys
 
