@@ -5,7 +5,7 @@
 # from operator import index
 # from os import rename
 # from streamlit.state.session_state import Value
-import secrets
+# import secrets
 from get_data import fetch_data # Module to fetch and process data
 import pandas as pd
 import numpy as np
