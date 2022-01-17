@@ -8,7 +8,7 @@ import datetime
 import pandas as pd
 from sodapy import Socrata
 # import config
-APP_TOKEN = os.environ.get("SOCRATA_APP_TOKEN")
+APP_TOKEN = os.environ("SOCRATA_APP_TOKEN")
 
 
 # def fetch_data():

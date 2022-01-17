@@ -29,7 +29,7 @@ from PIL import Image
 import streamlit as st
 
 # import sys
-print(st.secrets['SOCRATA_APP_TOKEN'])
+
 
 #############
 # STREAMLIT #
