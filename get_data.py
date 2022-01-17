@@ -72,7 +72,8 @@ def fetch_data():
     # FETCHING AND PROCESSING DATA #
     ################################
 
-    client = Socrata("data.cityofnewyork.us", APP_TOKEN)
+    # client = Socrata("data.cityofnewyork.us", APP_TOKEN)
+    client = Socrata("data.cityofnewyork.us")
 
     # Example authenticated client (needed for non-public datasets):
     # client = Socrata(data.cityofnewyork.us,
