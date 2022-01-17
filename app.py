@@ -30,7 +30,7 @@ import streamlit as st
 
 import sys
 import os
-APP_TOKEN = os.environ(SOCRATA_APP_TOKEN)
+APP_TOKEN = os.environ("SOCRATA_APP_TOKEN")
 
 
 #############
