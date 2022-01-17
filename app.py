@@ -28,6 +28,9 @@ from PIL import Image
 
 import streamlit as st
 
+import sys
+APP_TOKEN = st.secrets.key.SOCRATA_APP_TOKEN
+
 
 #############
 # STREAMLIT #
@@ -53,7 +56,7 @@ html_title = """
     </div>
     """
 st.sidebar.markdown(html_title, unsafe_allow_html=True)
-st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signals/')
+# st.sidebar.caption('Image from www.mississaugabikes.ca/crossrides-and-bike-signals/')
 
 #################
 # FETCHING DATA #
@@ -88,8 +91,10 @@ first_date = collisions['crash_date'].min()
 
 all_boros = collisions.borough.unique()
 
-chk1, chk2, chk3 = st.sidebar.columns(3)
-chk4, chk5, chk6 = st.sidebar.columns(3)
+# chk1, chk2, chk3 = st.columns(3)
+# chk4, chk5, chk6 = st.columns(3)
+
+chk1, chk2, chk3, chk4, chk5, chk6 = st.columns(6)
 ###
 boro_selection = []
 with chk1:
@@ -125,6 +130,14 @@ with chk6:
 # 'st.checkbox(label, value=False, key=None, help=None, on_change=None, args=None, kwargs=None, *, disabled=False)'
 # 'array([nan, 'QUEENS', 'BROOKLYN', 'STATEN ISLAND', 'MANHATTAN', 'BRONX'],'
 
+if len(boro_selection) == 0:
+    sys.tracebacklimit = 0
+    sys.exit('Please select at least 1 borough to proceed')
+
+# while len(boro_selection) == 0:
+#     sys.exit('Please select a borough!')
+
+
 grouped_by_day = collisions.loc[collisions.borough.isin(boro_selection)].groupby(['crash_year', 'crash_date']).agg({
     'collision_id': 'count',
     'number_of_persons_injured': 'sum',
@@ -136,6 +149,7 @@ grouped_by_day = collisions.loc[collisions.borough.isin(boro_selection)].groupby
     'number_of_motorists_injured': 'sum',
     'number_of_motorists_killed': 'sum'
 }).reset_index()
+
 
 # Grouping by Year to obtain the cummulative sum
 grouped_by_day['collisions_cumsum'] = grouped_by_day.groupby(['crash_year'])['collision_id'].cumsum()
