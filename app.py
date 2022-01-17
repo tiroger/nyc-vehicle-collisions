@@ -63,7 +63,7 @@ st.sidebar.markdown(html_title, unsafe_allow_html=True)
 # FETCHING DATA #
 # ###############
 
-#@st.cache(show_spinner=False, max_entries=5, ttl=86400)
+@st.cache(show_spinner=False, max_entries=5, ttl=86400)
 def fetch_and_clean_data():
     with st.spinner('Data Refreshing... May take up to 5 minutes.'):
         collisions_df = fetch_data()
