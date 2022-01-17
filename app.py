@@ -29,8 +29,8 @@ from PIL import Image
 import streamlit as st
 
 import sys
-import os
-APP_TOKEN = os.environ("SOCRATA_APP_TOKEN")
+# import os
+# APP_TOKEN = os.environ("SOCRATA_APP_TOKEN")
 
 
 #############
