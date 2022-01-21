@@ -163,6 +163,10 @@ grouped_by_day['peds_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])['n
 
 grouped_by_day['cyclist_injured_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_cyclists_injured'].cumsum()
 grouped_by_day['cyclist_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_cyclists_killed'].cumsum()
+
+grouped_by_day['motorists_injured_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_motorists_injured'].cumsum()
+grouped_by_day['motorists_killed_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_motorists_killed'].cumsum()
+
 grouped_by_day.reset_index(inplace=True)
 
 # Year to Date metrics
@@ -170,8 +174,8 @@ max_date = collisions['crash_date'].max()
 
 collisions_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['collisions_cumsum']
 
-# persons_injured_YTD = grouped_by_month.loc[grouped_by_month['crash_month_year'] == max_date]['person_injured_cumsum']
-# persons_killed_YTD = grouped_by_month.loc[grouped_by_month['crash_month_year'] == max_date]['person_killed_cumsum']
+persons_injured_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['person_injured_cumsum']
+persons_killed_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['person_killed_cumsum']
 
 peds_injured_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['peds_injured_cumsum']
 peds_killed_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['peds_killed_cumsum']
@@ -179,20 +183,28 @@ peds_killed_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['
 cyclists_injured_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['cyclist_injured_cumsum']
 cyclists_killed_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['cyclist_killed_cumsum']
 
+motorists_injured_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['motorists_injured_cumsum']
+motorists_killed_YTD = grouped_by_day.loc[grouped_by_day['crash_date'] == max_date]['motorists_killed_cumsum']
+
+
+
 # Previous YTD
 last_year = max_date - pd.DateOffset(years=1)
 last_YTD = last_year
 
 collisions_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['collisions_cumsum']
 
-# persons_injured_YTD_previous = grouped_by_month.loc[grouped_by_month['crash_month_year'] == last_YTD]['person_injured_cumsum']
-# persons_killed_YTD_previous = grouped_by_month.loc[grouped_by_month['crash_month_year'] == last_YTD]['person_killed_cumsum']
+persons_injured_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['person_injured_cumsum']
+persons_killed_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['person_killed_cumsum']
 
 peds_injured_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['peds_injured_cumsum']
 peds_killed_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['peds_killed_cumsum']
 
 cyclists_injured_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['cyclist_injured_cumsum']
 cyclists_killed_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['cyclist_killed_cumsum']
+
+motorists_injured_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['motorists_injured_cumsum']
+motorists_killed_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] == last_YTD]['motorists_killed_cumsum']
 
 # Percent Change YTD
 collisions_perc_change = (collisions_YTD.values - collisions_YTD_previous.values)/collisions_YTD_previous.values*100
@@ -202,6 +214,9 @@ peds_killed_perc_change = (peds_killed_YTD.values - peds_killed_YTD_previous.val
 
 cyclists_injured_perc_change = (cyclists_injured_YTD.values - cyclists_injured_YTD_previous.values)/cyclists_injured_YTD_previous.values*100
 cyclists_killed_perc_change = (cyclists_killed_YTD.values - cyclists_killed_YTD_previous.values)/cyclists_killed_YTD_previous.values*100
+
+motorists_injured_perc_change = (motorists_injured_YTD.values - motorists_injured_YTD_previous.values)/motorists_injured_YTD_previous.values*100
+motorists_killed_perc_change = (motorists_killed_YTD.values - motorists_killed_YTD_previous.values)/motorists_killed_YTD_previous.values*100
 
 ############################
 # FETCHING HISTORICAL DATA #
@@ -293,7 +308,10 @@ else:
 
 ### TOP ROW
 st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) for {add_text} through {last_updated.strftime("%Y-%m-%d")}') 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col9 = st.columns(2)
+col2, col3, col4 = st.columns(3)
+col5, col6, col7 = st.columns(3)
+
 
 # col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{collisions_perc_change}%')
 # col2.metric("Pedestrians Injured (YTD)", peds_injured_YTD, f'{peds_injured_perc_change}%')
@@ -322,10 +340,13 @@ col1, col2, col3, col4, col5 = st.columns(5)
 #     st.metric("", cyclists_injured_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
 
 col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{round(collisions_perc_change[0], 0)}% (2021 YTD)')
+# col9.write('------------------------------------------------------------------------------------------------')
 col2.metric('Pedestrians Injured (YTD)', peds_injured_YTD, f'{round(peds_injured_perc_change[0], 0)}% (2021 YTD)')
-col3.metric('Pedestrians Killed (YTD)', peds_killed_YTD, f'{round(peds_killed_perc_change[0], 0)}% (2021 YTD)')
-col4.metric('Cyclists Injured (YTD)', cyclists_injured_YTD, f'{round(cyclists_injured_perc_change[0], 0)}% (2021 YTD)')
-col5.metric('Cyclists Killed (YTD)', cyclists_killed_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
+col5.metric('Pedestrians Killed (YTD)', peds_killed_YTD, f'{round(peds_killed_perc_change[0], 0)}% (2021 YTD)')
+col3.metric('Cyclists Injured (YTD)', cyclists_injured_YTD, f'{round(cyclists_injured_perc_change[0], 0)}% (2021 YTD)')
+col6.metric('Cyclists Killed (YTD)', cyclists_killed_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
+col4.metric('Motorists Injured (YTD)', motorists_injured_YTD, f'{round(motorists_injured_perc_change[0], 0)}% (2021 YTD)')
+col7.metric('Motorists Killed (YTD)', motorists_killed_YTD, f'{round(motorists_killed_perc_change[0], 0)}% (2021 YTD)')
 
 st.markdown('<hr/>', unsafe_allow_html=True)
 
