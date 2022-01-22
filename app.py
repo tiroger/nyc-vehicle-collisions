@@ -6,6 +6,7 @@
 # from os import rename
 # from streamlit.state.session_state import Value
 # import secrets
+from distutils.command import config
 from get_data import fetch_data # Module to fetch and process data
 import pandas as pd
 import numpy as np
@@ -209,6 +210,9 @@ motorists_killed_YTD_previous = grouped_by_day.loc[grouped_by_day['crash_date'] 
 # Percent Change YTD
 collisions_perc_change = (collisions_YTD.values - collisions_YTD_previous.values)/collisions_YTD_previous.values*100
 
+persons_injured_perc_change = (persons_injured_YTD.values - persons_injured_YTD_previous.values)/persons_injured_YTD_previous.values*100
+persons_killed_perc_change = (persons_killed_YTD.values - persons_killed_YTD_previous.values)/persons_killed_YTD_previous.values*100
+
 peds_injured_perc_change = (peds_injured_YTD.values - peds_injured_YTD_previous.values)/peds_injured_YTD_previous.values*100
 peds_killed_perc_change = (peds_killed_YTD.values - peds_killed_YTD_previous.values)/peds_killed_YTD_previous.values*100
 
@@ -248,6 +252,14 @@ by_year_and_boro = collisions.groupby(['crash_year', 'crash_month']).agg({
     'number_of_motorists_injured': 'sum',
     'number_of_motorists_killed': 'sum'
 }).rename(columns={'collision_id': 'total_collisions'}).reset_index()
+
+# Most dangerous streets
+dangerous_streets = collisions.groupby(['borough', 'on_street_name']).agg({'collision_id': 'count'}).reset_index()
+dangerous_streets.sort_values(by='collision_id', ascending=False, inplace=True)
+dangerous_streets = dangerous_streets.replace('', np.nan)
+dangerous_streets.dropna(inplace=True)
+dangerous_streets.rename(columns={'collision_id': 'Total Collisions'}, inplace=True)
+top_10_dangerous_st = dangerous_streets.head(1000)
 
 ##########################
 # COLLISIONS IN PAST DAY #
@@ -308,7 +320,7 @@ else:
 
 ### TOP ROW
 st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) for {add_text} through {last_updated.strftime("%Y-%m-%d")}') 
-col1, col9 = st.columns(2)
+col1, col9, col10 = st.columns(3)
 col2, col3, col4 = st.columns(3)
 col5, col6, col7 = st.columns(3)
 
@@ -340,7 +352,8 @@ col5, col6, col7 = st.columns(3)
 #     st.metric("", cyclists_injured_YTD, f'{round(cyclists_killed_perc_change[0], 0)}% (2021 YTD)')
 
 col1.metric('Vehicle Collisions (YTD)', collisions_YTD, f'{round(collisions_perc_change[0], 0)}% (2021 YTD)')
-# col9.write('------------------------------------------------------------------------------------------------')
+# col9.metric('Persons Injured (YTD)', persons_injured_YTD, f'{round(persons_injured_perc_change[0], 0)}% (2021 YTD)')
+# col10.metric('Persons Killed (YTD)', persons_killed_YTD, f'{round(persons_killed_perc_change[0], 0)}% (2021 YTD)')
 col2.metric('Pedestrians Injured (YTD)', peds_injured_YTD, f'{round(peds_injured_perc_change[0], 0)}% (2021 YTD)')
 col5.metric('Pedestrians Killed (YTD)', peds_killed_YTD, f'{round(peds_killed_perc_change[0], 0)}% (2021 YTD)')
 col3.metric('Cyclists Injured (YTD)', cyclists_injured_YTD, f'{round(cyclists_injured_perc_change[0], 0)}% (2021 YTD)')
@@ -410,7 +423,7 @@ with col8:
     'font': {'size': 10, 'color': 'black'},
     'hovertext': 'On March 7, Cuomo declared a state of emergency in New York State after 162 cases had been confirmed in the state.'
     }
-    metric = st.selectbox('', options=metrics, format_func=lambda x: change_case(x), help='Select desired metric')
+    metric = st.selectbox('', options=metrics, format_func=lambda x: change_case(x))
     proper_metric = metric.replace('_', ' ')
     proper_metric = proper_metric.title()
 
@@ -473,20 +486,72 @@ with col8:
 
     st.plotly_chart(fig, use_container_width = True)
 
+# with col9:
+#     n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
+#     crash_causes = collisions['contributing_factor_vehicle_1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
+#     top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(n_reasons)
+
+#     labels = top_10_crashes_causes.unique_values
+#     values = top_10_crashes_causes.counts
+
+# # pull is given as a fraction of the pie radius
+#     fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+#     fig.update_layout(
+#     title_text=f'Top {n_reasons} Vehicle Collision Causes <br><sup>~30% of causes listed as "Unspecified" .</sup>')
+
+#     st.plotly_chart(fig, use_container_width = True)
+
 with col9:
-    n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
-    crash_causes = collisions['contributing_factor_vehicle_1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
-    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(n_reasons)
+    borough_of_st = st.selectbox('', options=['Manhattan', 'Brooklyn', 'Bronx', 'Queens', 'Staten Island'])
+    cap_borough_of_st = borough_of_st.upper()
 
-    labels = top_10_crashes_causes.unique_values
-    values = top_10_crashes_causes.counts
-
-# pull is given as a fraction of the pie radius
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+    top_10_dangerous_st = top_10_dangerous_st[top_10_dangerous_st.borough.isin([cap_borough_of_st])].head(10).sort_values(by='Total Collisions', ascending=True)
+    fig = px.bar(top_10_dangerous_st, y='on_street_name', x='Total Collisions', title=f'Most Dangerous Cross Streets in {borough_of_st} <br><sup>*Total Number of Collisions Since 2019</sup>', hover_data=['Total Collisions'], orientation='h')
+    # fig.update_xaxes(tickangle=45)
+    fig.update_traces(hovertemplate=None, marker_color='rgb(253,184,19)')
     fig.update_layout(
-    title_text=f'Top {n_reasons} Vehicle Collision Causes <br><sup>~30% of causes listed as "Unspecified" .</sup>')
+            xaxis=dict(
+                showline=True,
+                showgrid=False,
+                showticklabels=True,
+                linecolor='rgb(204, 204, 204)',
+                linewidth=2,
+                ticks='outside',
+                title='',
+                tickfont=dict(
+                    family='Arial',
+                    size=12,
+                    color='rgb(82, 82, 82)',
+                ),
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=False,
+                gridcolor = 'rgb(235, 236, 240)',
+                showticklabels=True,
+                title='',
+                autorange=True
+            ),
+            autosize=True,
+            hovermode="x unified",
+            margin=dict(
+                autoexpand=True,
+                l=100,
+                r=20,
+                t=110,
+            ),
+            showlegend=True,
+    #         legend=dict(
+    #         # orientation="h",
+    #         yanchor="bottom",
+    #         y=0.9,
+    #         xanchor="left",
+    #         x=0.7
+    # ),
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
 
-#     fig = px.bar(top_10_crashes_causes, x="unique_values", y="counts")
     st.plotly_chart(fig, use_container_width = True)
 
 

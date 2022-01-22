@@ -100,7 +100,7 @@ def fetch_data():
                             'Illnes': 'Illness',
                             'Drugs (illegal)': 'Drugs (Illegal)'
                             }, inplace=True)
-    results_df.drop(['location', 'on_street_name', 'cross_street_name', 'off_street_name', 'vehicle_type_code1', 'vehicle_type_code2', 'vehicle_type_code_3', 'vehicle_type_code_4', 'vehicle_type_code_5', 'contributing_factor_vehicle_2', 'contributing_factor_vehicle_3', 'contributing_factor_vehicle_4', 'contributing_factor_vehicle_5'], axis=1, inplace=True)
+    results_df.drop(['location', 'cross_street_name', 'off_street_name', 'vehicle_type_code1', 'vehicle_type_code2', 'vehicle_type_code_3', 'vehicle_type_code_4', 'vehicle_type_code_5', 'contributing_factor_vehicle_2', 'contributing_factor_vehicle_3', 'contributing_factor_vehicle_4', 'contributing_factor_vehicle_5'], axis=1, inplace=True)
     # collisions_df.dropna(inplace=True) # Dropping all rows with missing values; may revist this later to augment data
 
     # Creating new columns for analysis
@@ -111,14 +111,24 @@ def fetch_data():
     results_df['crash_time'] = pd.to_datetime(results_df['crash_time'])
     results_df['crash_hour'] = pd.DatetimeIndex(results_df['crash_time']).hour
 
-    results_df.number_of_persons_injured.fillna(0, inplace=True)
-    results_df.number_of_persons_killed.fillna(0, inplace=True)
+    # results_df.number_of_persons_injured.fillna(0, inplace=True)
+    # results_df.number_of_persons_killed.fillna(0, inplace=True)
     results_df.number_of_pedestrians_injured.fillna(0, inplace=True)
     results_df.number_of_pedestrians_killed.fillna(0, inplace=True)
     results_df.number_of_cyclist_injured.fillna(0, inplace=True)
     results_df.number_of_cyclist_killed.fillna(0, inplace=True)
     results_df.number_of_motorist_injured.fillna(0, inplace=True)
     results_df.number_of_motorist_killed.fillna(0, inplace=True)
+
+    # results_df['number_of_persons_injured'] = results_df['number_of_pedestrians_injured'] + results_df['number_of_cyclist_injured'] + results_df['number_of_motorist_injured']
+    # results_df['number_of_persons_killed'] = results_df['number_of_pedestrians_killed'] + results_df['number_of_cyclist_killed'] + results_df['number_of_motorist_killed']
+
+    missing_persons = results_df[(results_df['number_of_persons_injured'].isna()) 
+        | (results_df['number_of_persons_killed'].isna())]
+
+    results_df.loc[missing_persons.index, 'number_of_persons_injured'] = missing_persons[['number_of_pedestrians_injured', 'number_of_cyclist_injured','number_of_motorist_injured']].sum(axis=1)
+    results_df.loc[missing_persons.index, 'number_of_persons_killed'] = missing_persons[['number_of_pedestrians_injured', 'number_of_cyclist_injured', 'number_of_motorist_injured']].sum(axis=1)
+
 
     # Converting objects to int
     cols_to_convert = ['number_of_persons_injured', 'number_of_persons_killed',
