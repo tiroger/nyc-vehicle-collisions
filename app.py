@@ -32,6 +32,7 @@ from PIL import Image
 
 import streamlit as st
 # APP_TOKEN = st.secrets['SOCRATA_APP_TOKEN']
+# MAPBOX_TOKEN = st.secrets[MAPBOX_TOKEN]
 
 # import sys
 
@@ -388,7 +389,7 @@ with col7:
     total_collisions = collisions[collisions['crash_date'] == latest_collision_date]['collision_id'].count()
 
 #### HEXBIN ######
-# px.set_mapbox_access_token('pk.eyJ1IjoidGlyb2dlciIsImEiOiJjancxNHNkdGMwN2E4NDNtemt3dDM1ZDJ0In0.CJVEsnLNqQXM74U5VLPTEA')
+# px.set_mapbox_access_token('[KEY]')
 
 # st.markdown(f'<h5>There were <em style="font-size:30px" "color:red">{total_collisions}</em> collisions on {latest_collision_date}</h5>', unsafe_allow_html=True)
 
