@@ -19,6 +19,8 @@ from streamlit_folium import folium_static
 # import datetime
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.figure_factory as ff
+config = {'displayModeBar': False}
 
 # import pyarrow.parquet as pq
 # import awswrangler as wr
@@ -85,7 +87,6 @@ collisions.rename(columns={
 #################################
 
 data_start_date = '2019-01-01' # Limiting data to from 2019 to present day
-
 collisions = collisions[collisions['crash_date'] >= data_start_date]
 
 last_updated = collisions['crash_date'].max()
@@ -139,8 +140,8 @@ with chk6:
 # while len(boro_selection) == 0:
 #     sys.exit('Please select a borough!')
 
-
-grouped_by_day = collisions.loc[collisions.borough.isin(boro_selection)].groupby(['crash_year', 'crash_date']).agg({
+collisions = collisions[collisions.borough.isin(boro_selection)]
+grouped_by_day = collisions.groupby(['crash_year', 'crash_date']).agg({
     'collision_id': 'count',
     'number_of_persons_injured': 'sum',
     'number_of_persons_killed': 'sum',
@@ -153,7 +154,7 @@ grouped_by_day = collisions.loc[collisions.borough.isin(boro_selection)].groupby
 }).reset_index()
 
 
-# Grouping by Year to obtain the cummulative sum
+# Grouping by Year to obtain the cummulative daily count
 grouped_by_day['collisions_cumsum'] = grouped_by_day.groupby(['crash_year'])['collision_id'].cumsum()
 
 grouped_by_day['person_injured_cumsum'] = grouped_by_day.groupby(['crash_year'])['number_of_persons_injured'].cumsum()
@@ -240,7 +241,7 @@ motorists_killed_perc_change = (motorists_killed_YTD.values - motorists_killed_Y
 # historical_df = all_collisions_df[all_collisions_df.crash_date < '2022-01-01'] # Removing 2022 data
 # historical_df = all_collisions_df[all_collisions_df.crash_year > 2012]
 
-collisions = collisions[collisions.borough.isin(boro_selection)]
+# collisions = collisions[collisions.borough.isin(boro_selection)]
 by_year_and_boro = collisions.groupby(['crash_year', 'crash_month']).agg({
     'collision_id': 'count',
     'number_of_persons_injured': 'sum',
@@ -268,6 +269,8 @@ top_10_dangerous_st = dangerous_streets.head(1000)
 # latest_collision_date = data.crash_date.max()
 def map_collisions(latest_collision_date):
     latest_collision_date_df = collisions[collisions['crash_date'] == latest_collision_date].dropna()
+    latest_collision_date_df['latitude'] = pd.to_numeric(latest_collision_date_df['latitude'])
+    latest_collision_date_df['longitude'] = pd.to_numeric(latest_collision_date_df['longitude'])
     locations = zip(latest_collision_date_df.latitude, latest_collision_date_df.longitude)
     # Initializing a new map centered around NYC
     collision_map = folium.Map(location=[40.7128, -74.0060], zoom_start=10, dragging=True, scrollWheelZoom=True, tiles='cartodbpositron')
@@ -319,7 +322,7 @@ else:
     add_text = 'your Selections'
 
 ### TOP ROW
-st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) for {add_text} through {last_updated.strftime("%Y-%m-%d")}') 
+st.markdown(f'### NYC Vehicle Collision Statistics Year-to-Date (YTD) for {add_text} through {last_updated.strftime("%m-%d-%Y")}') 
 col1, col9, col10 = st.columns(3)
 col2, col3, col4 = st.columns(3)
 col5, col6, col7 = st.columns(3)
@@ -384,13 +387,35 @@ with col7:
     collisions = collisions[collisions.borough.isin(boro_selection)]
     total_collisions = collisions[collisions['crash_date'] == latest_collision_date]['collision_id'].count()
 
+#### HEXBIN ######
+# px.set_mapbox_access_token('pk.eyJ1IjoidGlyb2dlciIsImEiOiJjancxNHNkdGMwN2E4NDNtemt3dDM1ZDJ0In0.CJVEsnLNqQXM74U5VLPTEA')
+
+# st.markdown(f'<h5>There were <em style="font-size:30px" "color:red">{total_collisions}</em> collisions on {latest_collision_date}</h5>', unsafe_allow_html=True)
+
+# # latest_collision_date_df = collisions[collisions['crash_date'] == latest_collision_date].dropna()
+# collisions['latitude'] = pd.to_numeric(collisions['latitude'])
+# collisions['longitude'] = pd.to_numeric(collisions['longitude'])
+# latest_collision_date_df = collisions[collisions.longitude != 0.0]
+
+# fig = ff.create_hexbin_mapbox(
+#     data_frame=latest_collision_date_df, lat="latitude", lon="longitude", nx_hexagon=10, opacity=0.5, labels={"color": "Number of Collisions", "frame": "crash_month"},
+#     min_count=1, show_original_data=False, center={'lat': 40.7128, 'lon': -74.0060},
+#     original_data_marker=dict(size=6, opacity=0.6, color="deeppink"), color_continuous_scale="Icefire",
+# )
+# fig.data[0].hovertemplate = 'Number of Collisions: %{z:,.0f}'
+# fig.update_layout(margin=dict(b=0, t=0, l=0, r=0), showlegend=False)
+# st.plotly_chart(fig, use_container_width = True)
+#### HEXBIN ######
+
+### FOLIUM ###
 with st.container():
     # st.subheader(f'Daily Vehicle Collisions')
     # latest_collision_date = st.select_slider('',options=all_dates, value=all_dates[-1])
     # st.info(f'**Use slider to visualize collisions dating back to {all_dates[0]}')
-    st.markdown(f'<h5>There were <em style="font-size:30px" "color:red">{total_collisions}</em> collisions on {latest_collision_date}</h5>', unsafe_allow_html=True)
+    st.markdown(f'<h5>There were <em style="font-size:30px" "color:red">{total_collisions}</em> collisions on {last_updated.strftime("%m-%d-%Y")}</h5>', unsafe_allow_html=True)
     map_collisions(latest_collision_date)
-    
+### FOLIUM ###
+
 st.markdown('<hr/>', unsafe_allow_html=True)
 
 ###################
@@ -486,20 +511,7 @@ with col8:
 
     st.plotly_chart(fig, use_container_width = True)
 
-# with col9:
-#     n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
-#     crash_causes = collisions['contributing_factor_vehicle_1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
-#     top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(n_reasons)
 
-#     labels = top_10_crashes_causes.unique_values
-#     values = top_10_crashes_causes.counts
-
-# # pull is given as a fraction of the pie radius
-#     fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
-#     fig.update_layout(
-#     title_text=f'Top {n_reasons} Vehicle Collision Causes <br><sup>~30% of causes listed as "Unspecified" .</sup>')
-
-#     st.plotly_chart(fig, use_container_width = True)
 
 with col9:
     borough_of_st = st.selectbox('', options=['Manhattan', 'Brooklyn', 'Bronx', 'Queens', 'Staten Island'])
@@ -508,6 +520,7 @@ with col9:
     top_10_dangerous_st = top_10_dangerous_st[top_10_dangerous_st.borough.isin([cap_borough_of_st])].head(10).sort_values(by='Total Collisions', ascending=True)
     fig = px.bar(top_10_dangerous_st, y='on_street_name', x='Total Collisions', title=f'Most Dangerous Cross Streets in {borough_of_st} <br><sup>*Total Number of Collisions Since 2019</sup>', hover_data=['Total Collisions'], orientation='h')
     # fig.update_xaxes(tickangle=45)
+    
     fig.update_traces(hovertemplate=None, marker_color='rgb(253,184,19)')
     fig.update_layout(
             xaxis=dict(
@@ -551,6 +564,39 @@ with col9:
     # ),
             plot_bgcolor='rgba(0,0,0,0)'
         )
+
+    st.plotly_chart(fig, use_container_width = True)
+
+
+
+col15, col16 = st.columns(2)
+with col15:
+    # n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
+    crash_causes = collisions['contributing_factor_vehicle_1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
+    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(10)
+
+    labels = top_10_crashes_causes.unique_values
+    values = top_10_crashes_causes.counts
+
+# pull is given as a fraction of the pie radius
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+    fig.update_layout(
+    title_text=f'Top 10 Vehicle Collision Causes <br><sup>~30% of causes listed as "Unspecified" .</sup>')
+
+    st.plotly_chart(fig, use_container_width = True)
+
+with col16:
+    # n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
+    crash_causes = collisions['vehicle_type_code1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
+    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(10)
+
+    labels = top_10_crashes_causes.unique_values
+    values = top_10_crashes_causes.counts
+
+# pull is given as a fraction of the pie radius
+    fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+    fig.update_layout(
+    title_text=f'Top 10 Vehicle Types Involved in Collisions <br><sup></sup>')
 
     st.plotly_chart(fig, use_container_width = True)
 

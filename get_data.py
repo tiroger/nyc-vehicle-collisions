@@ -100,7 +100,7 @@ def fetch_data():
                             'Illnes': 'Illness',
                             'Drugs (illegal)': 'Drugs (Illegal)'
                             }, inplace=True)
-    results_df.drop(['location', 'cross_street_name', 'off_street_name', 'vehicle_type_code1', 'vehicle_type_code2', 'vehicle_type_code_3', 'vehicle_type_code_4', 'vehicle_type_code_5', 'contributing_factor_vehicle_2', 'contributing_factor_vehicle_3', 'contributing_factor_vehicle_4', 'contributing_factor_vehicle_5'], axis=1, inplace=True)
+    results_df.drop(['location', 'cross_street_name', 'off_street_name', 'vehicle_type_code2', 'vehicle_type_code_3', 'vehicle_type_code_4', 'vehicle_type_code_5', 'contributing_factor_vehicle_2', 'contributing_factor_vehicle_3', 'contributing_factor_vehicle_4', 'contributing_factor_vehicle_5'], axis=1, inplace=True)
     # collisions_df.dropna(inplace=True) # Dropping all rows with missing values; may revist this later to augment data
 
     # Creating new columns for analysis
