@@ -10,8 +10,8 @@ from sodapy import Socrata
 
 import streamlit as st
 # import config
-# APP_TOKEN = st.secrets['SOCRATA_APP_TOKEN']
-APP_TOKEN = os.environ.get("SOCRATA_APP_TOKEN")
+APP_TOKEN = st.secrets['SOCRATA_APP_TOKEN']
+# APP_TOKEN = os.environ.get("SOCRATA_APP_TOKEN")
 
 
 # def fetch_data():
