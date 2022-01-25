@@ -571,16 +571,61 @@ with col9:
 
 
 col15, col16 = st.columns(2)
+
 with col15:
     # n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
     crash_causes = collisions['contributing_factor_vehicle_1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
-    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(10)
+    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(10).sort_values(by='counts', ascending=True)
 
     labels = top_10_crashes_causes.unique_values
     values = top_10_crashes_causes.counts
 
+    fig = px.bar(top_10_crashes_causes, y="unique_values", x="counts", orientation='h')
+    fig.update_traces(hovertemplate=None, marker_color='rgb(2, 33, 105)')
+    fig.update_layout(
+            xaxis=dict(
+                showline=True,
+                showgrid=False,
+                showticklabels=True,
+                linecolor='rgb(204, 204, 204)',
+                linewidth=2,
+                ticks='outside',
+                title='',
+                tickfont=dict(
+                    family='Arial',
+                    size=12,
+                    color='rgb(82, 82, 82)',
+                ),
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=False,
+                gridcolor = 'rgb(235, 236, 240)',
+                showticklabels=True,
+                title='',
+                autorange=True
+            ),
+            autosize=True,
+            # hovermode="x unified",
+            margin=dict(
+                autoexpand=True,
+                l=100,
+                r=20,
+                t=110,
+            ),
+            showlegend=True,
+    #         legend=dict(
+    #         # orientation="h",
+    #         yanchor="bottom",
+    #         y=0.9,
+    #         xanchor="left",
+    #         x=0.7
+    # ),
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
 # pull is given as a fraction of the pie radius
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+    # fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
     fig.update_layout(
     title_text=f'Top 10 Vehicle Collision Causes <br><sup>~30% of causes listed as "Unspecified" .</sup>')
 
@@ -589,17 +634,62 @@ with col15:
 with col16:
     # n_reasons = st.slider('Slide to see more', min_value=5, max_value=20, value=5)
     crash_causes = collisions['vehicle_type_code1'].value_counts().rename_axis('unique_values').reset_index(name='counts')
-    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(10)
+    top_10_crashes_causes = crash_causes[crash_causes.unique_values != 'Unspecified'].head(10).sort_values(by='counts', ascending=True)
 
     labels = top_10_crashes_causes.unique_values
     values = top_10_crashes_causes.counts
+    fig = px.bar(top_10_crashes_causes, y="unique_values", x="counts", orientation='h')
+    fig.update_traces(hovertemplate=None, marker_color='rgb(2, 33, 105)')
+    fig.update_layout(
+            xaxis=dict(
+                showline=True,
+                showgrid=False,
+                showticklabels=True,
+                linecolor='rgb(204, 204, 204)',
+                linewidth=2,
+                ticks='outside',
+                title='',
+                tickfont=dict(
+                    family='Arial',
+                    size=12,
+                    color='rgb(82, 82, 82)',
+                ),
+            ),
+            yaxis=dict(
+                showgrid=False,
+                zeroline=False,
+                showline=False,
+                gridcolor = 'rgb(235, 236, 240)',
+                showticklabels=True,
+                title='',
+                autorange=True
+            ),
+            autosize=True,
+            # hovermode="x unified",
+            margin=dict(
+                autoexpand=True,
+                l=100,
+                r=20,
+                t=110,
+            ),
+            showlegend=True,
+    #         legend=dict(
+    #         # orientation="h",
+    #         yanchor="bottom",
+    #         y=0.9,
+    #         xanchor="left",
+    #         x=0.7
+    # ),
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
 
 # pull is given as a fraction of the pie radius
-    fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
+    # fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0.2,0,0,0,0,0,0,0,0,0,0])])
     fig.update_layout(
-    title_text=f'Top 10 Vehicle Types Involved in Collisions <br><sup></sup>')
-
+    title_text=f'Top 10 Vehicle Types* Involved in Collisions <br><sup>SUV registrations jumped 21.2% while sedans dropped 16.9% from 2016 to 2020</sup>')
+    
     st.plotly_chart(fig, use_container_width = True)
+    # st.info('*SUV registration across the 5 boroughs jumped 21.2% from 2016 to 2020 as the number of sedans dropped 16.9% (https://bit.ly/3IqwAoi).')
 
 
 ############
